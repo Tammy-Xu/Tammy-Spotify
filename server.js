@@ -16,12 +16,13 @@ var musixmatchLyricsAPIKey = '8a9c004f3675bca796ec4d1fb79d30da';
 // var client_id = '67200a417bd943a8b4f2f89360381546'; // Your client id
 // var client_secret = '28857a674b2d42da9600d90e05b8527f'; // Your secret
 // var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
+//var site_url = 'http://localhost:8888';
 
 
 var client_id = '12bc7df3511d4be28b01f09ad0977958'; // Your client id
 var client_secret = '221abee4899544ce839d98941691df93'; // Your secret
 var redirect_uri = 'http://tammy.emoji.singles/callback'; // Your redirect uri
-
+var site_url = 'http://tammy.emoji.singles';
 
 var access_token = null;
 // var userData = null;
@@ -1002,7 +1003,7 @@ var server = http.createServer(function (req, res) {
 		if(userKey){
 			console.log('userKey---' + userKey);
 			res.writeHead(301,{
-				Location: 'http://localhost:8888/userdata.html'
+				Location: site_url+'/userdata.html'
 			});
 			res.end();
 		}else{
