@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>User Data</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+	      integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+
+<style>
+	* {
+		box-sizing: border-box;
+	}
+
+	html {
+		width: 100%;
+		min-height: 100%;
+	}
+
+	body {
+		width: inherit;
+		min-height: 100vh;
+		margin: 0;
+		padding: 0;
+	}
+
+	/*Image border------------*/
+	.albumImageWrap {
+		--borderWidth: 7px;
+		background: #0c202e;
+		position: relative;
+		border-radius: var(--borderWidth);
+		margin: auto;
+		width: fit-content;
+		padding: 10px;
+	}
+	.albumImageWrap:after {
+		content: '';
+		position: absolute;
+		top: calc(-1 * var(--borderWidth));
+		left: calc(-1 * var(--borderWidth));
+		height: calc(100% + var(--borderWidth) * 2);
+		width: calc(100% + var(--borderWidth) * 2);
+		background: linear-gradient(45deg, #f79533, #f37055, #ef4e7b, #1f437d, #5073b8, #1098ad, #07b39b
+		, #1f437d, #ffd800, #ff5520, #750cf2, #0cbcf2);
+		border-radius: calc(2 * var(--borderWidth));
+		z-index: -1;
+		animation: animatedgradient 6s ease normal infinite;
+
+		background-size: 300% 300%;
+	}
+
+
+	@keyframes animatedgradient {
+		0% {
+			background-position: left top;
+		}
+		25%{
+			background-position: right top;
+		}
+		50% {
+			background-position: right bottom;
+		}
+		100% {
+			background-position: left bottom;
+			/*transform: rotate(1turn);*/
+		}
+
+	}/*End of image border------------*/
+
+
+
+	#playerWrapper {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		height: 75%;
+		width: 85%;
+		font-weight: 600;
+		transform: translate(-50%, -60%);
+
+	}
+
+	#playerDiv {
+		background-color: rgba(83, 83, 83, 0.5);
+		opacity: 0.8;
+	}
+
+	h1 {
+		background: -webkit-linear-gradient(#f6f44e, #1f437d);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+
+	@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
+
+	h1 {
+		border-right: solid 3px rgba(0, 255, 0, .75);
+		white-space: nowrap;
+		overflow: hidden;
+		font-family: 'Source Code Pro', monospace;
+		font-size: 28px;
+		color: rgba(255, 255, 255, .70);
+	}
+
+	/* Animation */
+	h1 {
+		animation: animated-text 4s steps(10, end) 1s 1 normal both,
+		animated-cursor 600ms steps(10, end) infinite;
+	}
+
+	/* text animation */
+	@keyframes animated-text {
+		from {
+			width: 0;
+		}
+		to {
+			width: 145px;
+		}
+	}
+
+	/* cursor animations */
+
+	@keyframes animated-cursor {
+		from {
+			border-right-color: rgba(0, 255, 0, .75);
+		}
+		to {
+			border-right-color: transparent;
+		}
+	}
+
+	
+	/*@media (min-width: 576px) {*/
+	/*	#albumImage{*/
+	/*		width: 500px;*/
+	/*	}*/
+	/*}*/
+
+	/*@media (min-width: 768px) {*/
+	/*	#albumImage{*/
+	/*		width: 400px;*/
+	/*	}*/
+	/*}*/
+
+	/*@media (min-width: 992px) {*/
+	/*	#albumImage{*/
+	/*		width: 450px;*/
+	/*	}*/
+	/*}*/
+
+</style>
+
+
+<div id="blurredBackground" style="display: none;">
+
+</div>
+
+
+<div id="playerWrapper" style="display: none;">
+	<h1 style="color: darkblue;">Hi <p class="userName" style="display: inline-block">##UserName##</p></h1>
+
+	<div class="my-4 albumImageWrap">
+		<img id="albumImage" src="#" width="300px" class="img-fluid">
+	</div>
+
+
+	<div id="playerDiv" class="container col-12 mt-auto mt-lg-5 text-white" style="display: none;">
+
+
+
+
+		<div class="row py-4">
+
+
+			<div class="col-lg-1"></div>
+
+			<div class="col-lg-5">
+
+				<div>
+					<div>Now Playing: <p class="currentPlaying" style="display: inline-block;">##CurrentPlaying##</p>
+					</div>
+					<div>Artist: <p class="artists" style="display: inline-block;">##Artists##</p></div>
+
+				</div>
+				<div>
+					<p>Part of the lyrics: </p>
+					<div id="lyrics">
+
+					</div>
+
+
+				</div>
+			</div>
+
+
+			<div class="col-lg-1"></div>
+
+		</div>
+
+
+		<div id="playbar" class="d-flex align-items-center justify-content-center px-5 mt-5"
+		     style="background-color: #535353; height: 70px; width: 100%;">
+			<button id="prevBtn" style="display: inline-block;" class="btn"><i
+				class="fa fa-arrow-left align-self-center px-3 text-white"></i></button>
+			<button id="playBtn" style="display: inline-block;" class="btn"><i
+				class="fa fa-pause align-self-center px-3 text-white"></i></button>
+			<button id="nextBtn" style="display: inline-block;" class="btn"><i
+				class="fa fa-arrow-right align-self-center px-3 text-white"></i></button>
+		</div>
+
+	</div>
+</div>
+
+<script>
+	var getUserData = function () {
+		$.ajax({
+			method: "GET",
+			url: 'http://localhost:8888/userdata',
+			dataType: 'JSON',
+			success: function (data) {
+				console.log(data);
+
+				$('.userName').text(data.display_name);
+				$('.userCountry').text(data.country);
+				$('.userEmail').text(data.email);
+				$('.userSubscription').text(data.product);
+
+			}
+		});
+	};
+
+
+	var getCurrentPlayingData = function () {
+		$.ajax({
+			method: "GET",
+			url: 'http://localhost:8888/userCurrentPlayingData',
+			dataType: 'JSON',
+			success: function (data) {
+				console.log(data);
+				console.log(data.item.name);
+				console.log(data.item.artists[0].name);
+
+				console.log(data);
+				// getLyrics(data.item.name, data.item.artists[0].name);
+
+				if (data !== '') {
+					var artists = [];
+					var i = 0;
+					while (data.item.artists.length > i) {
+						artists.push(data.item.artists[i].name);
+						i++;
+					}
+
+					var albumImagURL = null;
+					var imgCount = 0;
+					while (data.item.album.images.length > imgCount) {
+						if (data.item.album.images[imgCount].height === 300) {
+							albumImagURL = data.item.album.images[imgCount].url
+							console.log(albumImagURL);
+						}
+						imgCount++;
+					}
+
+
+					$('.currentPlaying').text(data.item.name);
+					$('.artists').text(artists);
+					$('#albumImage').prop('src', albumImagURL);
+					$('#blurredBackground').css({
+						"background": "url(" + albumImagURL + ")",
+						"background-size": "cover",
+						"background-attachment": "fixed",
+						"filter": "blur(20px)",
+						"width": "auto",
+						"height": "100vh",
+						"z-index": "-1",
+						"position": "relative",
+						"background-position": "center"
+					});
+
+					$('#blurredBackground').css('display', 'block');
+					$('#playerWrapper, #playerDiv').css('display', 'block');
+
+
+					$('#lyrics').text(data.lyrics.lyrics_body);
+				} else {
+					$('#blurredBackground').css('display', 'none');
+					$('#playerWrapper, #playerDiv').css('display', 'none');
+				}
+
+
+				if (data.is_playing === true) {
+					$('#playBtn i').removeClass('fa-play').addClass('fa fa-pause');
+				} else {
+					$('#playBtn i').removeClass('fa-pause').addClass('fa fa-play');
+				}
+
+			}
+		});
+	};
+
+
+	var playerFuncs = function (method, action) {
+		console.log('play action is: ' + action + '-----------------');
+
+		$.ajax({
+			method: method,
+			url: 'http://localhost:8888/' + action,
+			dataType: 'JSON',
+			success: function (data) {
+				console.log(data);
+
+			}
+		});
+
+	};
+
+	getUserData();
+	getCurrentPlayingData();
+
+
+	$(document).ready(function () {
+
+
+		console.log('12345');
+
+
+		setInterval(function () {
+			getUserData();
+			getCurrentPlayingData();
+		}, 3000);
+
+		//play bar functions
+		$('#playBtn').off().click(function () {
+			console.log($('#playBtn i').hasClass('fa-play'));
+
+			if ($('#playBtn i').hasClass('fa-play')) {
+				$('#playBtn i').removeClass('fa-play').addClass('fa fa-pause');
+				playerFuncs('POST', 'play');
+			} else if ($('#playBtn i').hasClass('fa-pause')) {
+				$('#playBtn i').removeClass('fa-pause').addClass('fa fa-play');
+				playerFuncs('POST', 'pause');
+			} else {
+				console.log('fail to play/pause music');
+				console.log($('#playBtn i'));
+			}
+
+		});
+
+		$('#prevBtn').off().click(function () {
+			playerFuncs('POST', 'previous');
+			getCurrentPlayingData();
+		});
+		$('#nextBtn').off().click(function () {
+			playerFuncs('POST', 'next');
+			getCurrentPlayingData();
+		});
+
+
+	});
+</script>
+
+
+</div>
+</html>

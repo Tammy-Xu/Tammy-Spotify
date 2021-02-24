@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "cookies": "^0.8.0",
+    "keygrip": "^1.1.0",
+    "promise": "^8.1.0",
+    "request": "^2.88.2",
+    "sqlite3": "^5.0.0"
+  }
+}
