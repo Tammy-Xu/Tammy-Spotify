@@ -219,7 +219,7 @@
 	var getUserData = function () {
 		$.ajax({
 			method: "GET",
-			url: 'http://localhost:8888/userdata',
+			url: '/userdata',
 			dataType: 'JSON',
 			success: function (data) {
 				console.log(data);
@@ -237,7 +237,7 @@
 	var getCurrentPlayingData = function () {
 		$.ajax({
 			method: "GET",
-			url: 'http://localhost:8888/userCurrentPlayingData',
+			url: '/userCurrentPlayingData',
 			dataType: 'JSON',
 			success: function (data) {
 				console.log(data);
@@ -308,7 +308,7 @@
 
 		$.ajax({
 			method: method,
-			url: 'http://localhost:8888/' + action,
+			url: '/' + action,
 			dataType: 'JSON',
 			success: function (data) {
 				console.log(data);
