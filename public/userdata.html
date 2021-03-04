@@ -257,7 +257,7 @@
 
 				// getLyrics(data.item.name, data.item.artists[0].name);
 
-				if (data !== '' && data.connection === undefined) {
+				if (data.length>0 && data.connection === undefined) {
 					$('#NoConnectionDiv').css('display', 'none');
 					var artists = [];
 					var i = 0;
