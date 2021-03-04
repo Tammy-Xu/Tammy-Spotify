@@ -1,3 +1,4 @@
+
 var fs = require("fs"),
 	path = require('path'),
 	http = require("http"),
@@ -5,32 +6,30 @@ var fs = require("fs"),
 	util = require("util"),
 	qs = require("querystring");
 
-
-var request = require('request'); // "Request" library
-var Cookies = require('cookies'); //cookies module
-var Promise = require('promise'); //
-const sqlite3 = require('sqlite3'); //sqlite3 module
-
 var musixmatchLyricsAPIKey = '8a9c004f3675bca796ec4d1fb79d30da';
 
 // var client_id = '67200a417bd943a8b4f2f89360381546'; // Your client id
 // var client_secret = '28857a674b2d42da9600d90e05b8527f'; // Your secret
 // var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
-//var site_url = 'http://localhost:8888';
-
+// var site_url = 'http://localhost:8888';
 
 var client_id = '12bc7df3511d4be28b01f09ad0977958'; // Your client id
 var client_secret = '221abee4899544ce839d98941691df93'; // Your secret
 var redirect_uri = 'http://tammy.emoji.singles/callback'; // Your redirect uri
 var site_url = 'http://tammy.emoji.singles';
 
+var request = require('request'); // "Request" library
+var Cookies = require('cookies'); //cookies module
+var Promise = require('promise'); //
+const sqlite3 = require('sqlite3'); //sqlite3 module
+
+
 var access_token = null;
-// var userData = null;
-// var userCurrentPlayingData = null;
+
 var userKeyAndTokens = {};
 
-var userCurrentPlayingDataArray = [];
-var userDataArray = [];
+// var userCurrentPlayingDataArray = [];
+// var userDataArray = [];
 
 //open database------
 const db_path = 'database.db';
@@ -107,23 +106,27 @@ var getSongLyrics = function (name, artist) {
 		};
 
 		request.get( options, function (error, response, body) {
-			if( response.statusCode === 200){
+			if(error){
+				reject(body);
+			}else{
 
+				if( response.statusCode === 200){
 
-				var bodyJson = JSON.parse(body);
+					var bodyJson = JSON.parse(body);
 
-				if(bodyJson.message.header.status_code === 200 ){
-					console.log('GOT THE LYRICS!!!!!!!!!!!!!!!');
-					// console.log(bodyJson.message.body);
-					resolve(bodyJson.message.body);
+					if(bodyJson.message.header.status_code === 200 ){
+						console.log('GOT THE LYRICS!!!!!!!!!!!!!!!');
+						// console.log(bodyJson.message.body);
+						resolve(bodyJson.message.body);
+					}else{
+						console.log('FAILED TO GET LYRICS');
+						reject(body);
+					}
+
 				}else{
 					console.log('FAILED TO GET LYRICS');
 					reject(body);
 				}
-
-			}else{
-				console.log('FAILED TO GET LYRICS');
-				reject(body);
 			}
 		});
 	});
@@ -134,16 +137,13 @@ var insertDataToSQLite3 = function (selectQ, updateQ, insertQ, insertParams) {
 //try to insert userKey and userToken to SQLite3
 	return new Promise(function (resolve, reject) {
 		if (insertQ !== undefined && insertParams !== undefined) {
+
 			db.all(selectQ, function (err, rows) {
-				// console.log(rows);
-				// console.log('------SELECT QUERY---------' + selectQ);
 				if (err) {
 					reject('failed' + insertQ);
 				} else {
 					// console.log(' get userKey -----');
-
 					if (rows[0]['COUNT(*)'] < 1) {
-
 						//row userKey doesn't exist--insert it
 						db.run(insertQ, insertParams, function (err, rows) {
 							if (err) {
@@ -224,7 +224,6 @@ var getUserTokenFromSQL = function (userKey) {
 			if (err) {
 				reject(err);
 			} else {
-				console.log(selectQuery);
 				resolve(rows);
 			}
 		});
@@ -280,26 +279,17 @@ var insertUserInfo = function (userKey, access_token) {
 				console.log('Failed to access Spotify Web API----' + access_token);
 				reject(body);
 
-				// getRefreshTokenFromSQL(userKey).then(function (message) {
-				// 	console.log('get refresh access token');
-				//
-				// 	getNewAccessToken(message['refreshToken']);
-				//
-				// }).catch(function (message) {
-				// 	console.log('get refresh access token-failed!');
-				// 	console.log(message);
-				// });
-
 			}else{
-				console.log('get user info function------------');
-
-				//insert user data to SQLite, no need to push into userDataArray
+				//insert user data to SQLite after getting it from Spotify API, no need to push into userDataArray
 				// userDataArray[access_token] = body;
 				var selectQuery = "SELECT COUNT(*) FROM users WHERE userKey='" + userKey + "'";
 				var updateQuery = "UPDATE users SET userInfo='" + addslashes(JSON.stringify(body)) + "' WHERE userKey='" + userKey + "'";
 
-				insertDataToSQLite3(selectQuery, updateQuery);
-				resolve(body);
+				insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
+					resolve(body);
+				}).catch(function (err) {
+					reject(err);
+				})
 			}
 
 		});
@@ -322,10 +312,6 @@ var insertCurrentPlayContent = function (userKey, access_token) {
 
 		request.get(options, function (error, content, body) {
 
-			// userCurrentPlayingDataArray[access_token] = body;
-
-			// console.log((JSON.stringify(body)));
-
 			if(error){
 				console.log('get request failed');
 				console.log(error);
@@ -333,21 +319,27 @@ var insertCurrentPlayContent = function (userKey, access_token) {
 				//if there is error in body
 				if(body !== undefined){
 					if( "error" in body ){
-						console.log('--------299');
+						console.log('----------There is error in insertCurrentPlayContent function ------');
 						reject(body);
 
 					}else{
 						//dont need to insert current playing data to array now, insert to SQLite instead
 						// userCurrentPlayingDataArray[access_token] = body;
-
 						var selectQuery = "SELECT COUNT(*) FROM users WHERE userKey='" + userKey + "'";
 						var updateQuery = 'UPDATE users SET currentPlayingData="' + addslashes(JSON.stringify(body)) + '" WHERE userKey="' + userKey + '"';
 
-						insertDataToSQLite3(selectQuery, updateQuery);
-						resolve(body);
+						insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
+							resolve(body);
+						}).catch(function (err) {
+							reject(err);
+						});
 					}
 				}else {
-					reject('body content is blank');
+					console.log(content.headers.connection);
+					reject({
+						connection: content.headers.connection,
+						content: content
+					});
 				}
 			}
 		});
@@ -663,29 +655,28 @@ var server = http.createServer(function (req, res) {
 					var userToken = cookies.get('userToken');
 
 
-					//update the userKeyAndTokens object---
-					if (userKey in userKeyAndTokens) {
-						userKeyAndTokens[userKey] = access_token;
-
-					} else {
-						userKeyAndTokens[userKey] = access_token;
-
-					}
-
+					// //update the userKeyAndTokens object---
+					// if (userKey in userKeyAndTokens) {
+					// 	userKeyAndTokens[userKey] = access_token;
+					//
+					// } else {
+					// 	userKeyAndTokens[userKey] = access_token;
+					//
+					// }
 
 					insertUserInfo(userKey, userToken).then(function (message) {
 						console.log('627--userKey: ' + userKey + ' userToken: ' + userToken);
-						console.log(message)
+						// console.log(message)
 					}).catch(function (error) {
-						console.log('--------630')
-						console.log(error);
+						console.log('--------630');
+						// console.log(error);
 					});
 					insertCurrentPlayContent(userKey, userToken).then(function (message) {
 						console.log('--------634')
-						console.log(message);
+						// console.log(message);
 					}).catch(function (error) {
 						console.log('--------637')
-						console.log(error);
+						// console.log(error);
 					});
 
 					//try to insert userKey and userToken to SQLite3---make this a function
@@ -697,10 +688,11 @@ var server = http.createServer(function (req, res) {
 					var paramsInsert = [userKey, access_token, refresh_token, userDataArray[access_token], userCurrentPlayingDataArray[access_token]];
 
 					insertDataToSQLite3(selectQuery, updateQuery, insertQuery, paramsInsert).then(function (message) {
-						console.log(message);
+						// console.log(message);
+
 					}).catch(function (error) {
 						console.log('--------652')
-						console.log(error)
+						// console.log(error)
 					});
 
 
@@ -713,7 +705,7 @@ var server = http.createServer(function (req, res) {
 
 				} else {
 					console.log(" request post error !");
-					console.log(body);
+					// console.log(body);
 				}
 			});
 		}
@@ -724,38 +716,24 @@ var server = http.createServer(function (req, res) {
 
 
 		getUserTokenFromSQL(userKey).then(function (message) {
-			console.log(message);
+			// console.log('getUserTokenFromSQL is called successfully');
+			// console.log(message);
+
 			//got user token from SQL successfully-
-			console.log('user token from SQL');
-
-
 			//instead of get userInfo from the global array, need to get it from sqlite----
-			//update userInfo in array and sqlite
-			insertUserInfo(userKey, userToken).then(function (message) {
-				console.log('insert user info 675 success--');
-				console.log(message);
-
-				//insert user info success----so try to get user info from SQL.
-				getUserInfoFromSQL(userKey).then(function (msg) {
-					console.log('getUserINFO FROM SQL-----------722');
-					// console.log(msg);
-					var string = msg.userInfo;
-					// console.log(JSON.parse(removeslashes(string)));
-					res.write(removeslashes(string));
-					res.end();
-				}).catch(function (msg) {
-					console.log('728 failed to select user info from SQL');
-					console.log(msg);
-				});
-
-				return message;
-
-			}).catch(function (msg) {
-				console.log('694--insert user info failed----');
+			getUserInfoFromSQL(userKey).then(function (msg) {
+				console.log('getUserINFO FROM SQL-----------722');
 				// console.log(msg);
-				//insert failed means need to use refresh token to get new access token
+				var string = msg.userInfo;
+				// console.log(JSON.parse(removeslashes(string)));
+				res.write(removeslashes(string));
+				res.end();
+			}).catch(function (msg) {
+				console.log('728 failed to select user info from SQL, insertUserInfo now');
+				// console.log(msg);
+
 				getRefreshTokenFromSQL(userKey).then(function (msg) {
-					console.log(msg);
+					// console.log(msg);
 
 					getNewAccessToken(msg.refreshToken).then(function (new_access_token) {
 						// console.log('701 !!!!!');
@@ -767,10 +745,10 @@ var server = http.createServer(function (req, res) {
 						var updateQuery = "UPDATE users SET userToken='" + refreshed_access_token + "' WHERE userKey='" + userKey + "'";
 
 						insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
-							// console.log('710-');
+							console.log('710-');
 							// console.log(message);
 						}).catch(function (message) {
-							// console.log('713-');
+							console.log('713-');
 							// console.log(message);
 						});
 
@@ -783,47 +761,25 @@ var server = http.createServer(function (req, res) {
 							res.end();
 						}).catch(function (Err) {
 							// console.log('725-');
-							console.log(Err);
+							// console.log(Err);
 						});
 
 					}).catch(function (ErrorMsg) {
-						console.log(ErrorMsg);
+						// console.log(ErrorMsg);
 					});
 
 				}).catch(function (Err) {
 					// failed to get refresh access token
 					console.log('735-failed to get refresh token from SQL');
-					console.log(Err);
+					// console.log(Err);
 
 				});
 			});
 
-
 		}).catch(function (error) {
-			console.log(error);
+			// console.log(error);
 
 		});
-
-		// if (userToken !== undefined && userToken !== '') {
-		//
-		//
-		//
-		// 	//this part is for writing the page with data from the array!
-		// 	// if (userDataArray[userToken] !== undefined) {
-		// 	// 	// res.write(JSON.stringify(userDataArray[userToken]));
-		// 	// } else {
-		// 	//
-		// 	// }
-		// 	// res.end();
-		//
-		// } else {
-		// 	// console.log('-------user token is blank-----');
-		// 	// res.writeHead(301, {Location: 'http://localhost:8888'});
-		// 	// res.end();
-		// 	//Writting the redirect here is not a good way, the code will only work if
-		// 	//go to the url like this  http://localhost:8888/userdata on the browser-
-		// 	//url like http://localhost:8888/userdata.html will not work because
-		// }
 
 	} else if (xpath === '/userCurrentPlayingData') {
 		var cookies = new Cookies(req, res);
@@ -832,39 +788,34 @@ var server = http.createServer(function (req, res) {
 
 		getUserTokenFromSQL(userKey).then(function (message) {
 			//update currentplayingdata in sqlite
-			insertCurrentPlayContent(userKey, userToken).then(function (message) {
-				// console.log('insert user info 764 success--');
-				// console.log(message);
+			insertCurrentPlayContent(userKey, message.userToken).then(function (message) {
 
-				//insert currentPlayingData success----so try to get currentPlayingData from SQL.
-				getCurrentPlayDataFromSQL(userKey).then(function (msg) {
-					console.log('get currentplaydata FROM SQL-----------769');
-					console.log(msg);
-
-
-
-
-
-
-
-
-
-
-
-					var string = msg.currentPlayingData;
-					// console.log(JSON.parse(removeslashes(string)));
-					res.write(removeslashes(string));
+				getSongLyrics(message.item.name, message.item.artists[0].name).then(function (getLyricsMsg) {
+					console.log('got lyrics successfully-----812');
+					// console.log(getLyricsMsg);
+					res.write(JSON.stringify(Object.assign(message, getLyricsMsg)));
 					res.end();
-				}).catch(function (err) {
-					console.log('776--');
-					console.log(err);
-				});
 
-				return message;
+				}).catch(function (err) {
+					console.log('Get lyrics failed, get current display data from SQL again!');
+					getCurrentPlayDataFromSQL(userKey).then(function (msg) {
+						console.log('get currentplaydata FROM SQL-----------769');
+						// console.log(msg);
+						var string = msg.currentPlayingData;
+						// console.log(JSON.parse(removeslashes(string)));
+						res.write(removeslashes(string));
+						res.end();
+					}).catch(function (err) {
+						console.log('776--');
+						// console.log(err);
+					});
+
+				});
+				// return message;
 
 			}).catch(function (err) {
 				console.log('783-- insertCurrentPlayContentfailed----');
-				console.log(err);
+				// console.log(err);
 				//insert failed means need to use refresh token to get new access token
 				getRefreshTokenFromSQL(userKey).then(function (msg1) {
 					// console.log('-----869 get refresh token from SQL');
@@ -873,7 +824,7 @@ var server = http.createServer(function (req, res) {
 					getNewAccessToken(msg1.refreshToken).then(function (new_access_token) {
 						//use refreshToken to get new access token
 						console.log('875 !!!!!');
-						console.log(new_access_token);
+						// console.log(new_access_token);
 						// console.log(JSON.parse(M).access_token);
 						var refreshed_access_token = JSON.parse(new_access_token).access_token;
 						// console.log(refreshed_access_token);
@@ -883,63 +834,73 @@ var server = http.createServer(function (req, res) {
 
 						insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
 							console.log('884- try to insert data to SQL');
-							console.log(message);
+							// console.log(message);
 						}).catch(function (err) {
 							console.log('804-');
-							console.log(err);
+							// console.log(err);
 						});
-
 
 						insertCurrentPlayContent(userKey, refreshed_access_token).then(function (message) {
 							console.log('893--insert current play content with refresh access token.');
 							// console.log(refreshed_access_token);
-							console.log(message.item.name);
-							console.log(message.item.artists[0].name);
+							// console.log(message.item.name);
+							// console.log(message.item.artists[0].name);
 
 							getSongLyrics(message.item.name, message.item.artists[0].name).then(function (getLyricsMsg) {
-								console.log('get lyrics result----------882');
-								console.log(getLyricsMsg);
+								console.log('got lyrics successfully-----');
+								// console.log(getLyricsMsg);
 								res.write(JSON.stringify(Object.assign(message, getLyricsMsg)));
 								res.end();
 
 
 							}).catch(function (err) {
-								console.log('886');
-								console.log(err);
+								console.log('Get lyrics failed, get current display data from SQL again!');
+								getCurrentPlayDataFromSQL(userKey).then(function (msg) {
+									console.log('get currentplaydata FROM SQL-----------769');
+									// console.log(msg);
+									var string = msg.currentPlayingData;
+									// console.log(JSON.parse(removeslashes(string)));
+									res.write(removeslashes(string));
+									res.end();
+								}).catch(function (err) {
+									console.log('776--');
+									res.write(JSON.stringify(err));
+									res.end();
+								});
+
 							});
-
-
-
 
 							//the name of the current playing song --- message.item.name
 						}).catch(function (err) {
 							console.log('899-');
 							console.log(err);
+							res.write(JSON.stringify(err));
+							res.end();
 						});
 
 					}).catch(function (ErrorMsg) {
-						console.log(msg1);
-						console.log(ErrorMsg);
+						console.log('get new access token failed');
+						res.write(JSON.stringify(ErrorMsg));
+						res.end();
 					});
 
 				}).catch(function (err) {
 					// failed to get refresh access token
 					console.log('826-failed to get refresh token from SQL');
-					console.log(err);
+					res.write(JSON.stringify(err));
+					res.end();
 				});
 			});
 		}).catch(function (err) {
-			console.log(err);
+			console.log('getUserTokenFrom SQL failed----908')
+			res.write(JSON.stringify(err));
+			res.end();
 		});
 
 	} else if (xpath === '/getLyrics'){
 		//get lyrics
 
 		console.log('************************************************getLyrics');
-
-
-
-
 
 	} else if (xpath === '/play') {
 		console.log('try to play music');
@@ -1037,7 +998,7 @@ var server = http.createServer(function (req, res) {
 				});
 				return res.end();
 			}else{
-				console.log('906----' + userKey + '!---' + userToken);
+				console.log('UserKeyCookie: ' + userKey + '  UserTokenCookie:' + userToken);
 			}
 		}else{
 			console.log(filePath);
@@ -1130,5 +1091,5 @@ var server = http.createServer(function (req, res) {
 });
 
 
-//server.listen(8888);
+// server.listen(8888);
 server.listen(80);

@@ -6,10 +6,13 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
 	      integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css">
 	<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+	<script src="https://unpkg.com/fast-average-color/dist/index.min.js"></script>
 </head>
 
 <style>
+	@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
 	* {
 		box-sizing: border-box;
 	}
@@ -20,10 +23,18 @@
 	}
 
 	body {
+		font-family: 'Source Code Pro', monospace;
+		background: #242f3c;
 		width: inherit;
-		min-height: 100vh;
+		/*min-height: 100vh;*/
 		margin: 0;
 		padding: 0;
+	}
+
+
+	#headerBar{
+		height: 150px;
+		background-color: #0c202e;
 	}
 
 	/*Image border------------*/
@@ -36,6 +47,7 @@
 		width: fit-content;
 		padding: 10px;
 	}
+
 	.albumImageWrap:after {
 		content: '';
 		position: absolute;
@@ -43,8 +55,7 @@
 		left: calc(-1 * var(--borderWidth));
 		height: calc(100% + var(--borderWidth) * 2);
 		width: calc(100% + var(--borderWidth) * 2);
-		background: linear-gradient(45deg, #f79533, #f37055, #ef4e7b, #1f437d, #5073b8, #1098ad, #07b39b
-		, #1f437d, #ffd800, #ff5520, #750cf2, #0cbcf2);
+		background: linear-gradient(45deg, #f79533, #f37055, #ef4e7b, #1f437d, #5073b8, #1098ad, #07b39b, #1f437d, #ffd800, #ff5520, #750cf2, #0cbcf2);
 		border-radius: calc(2 * var(--borderWidth));
 		z-index: -1;
 		animation: animatedgradient 6s ease normal infinite;
@@ -52,12 +63,11 @@
 		background-size: 300% 300%;
 	}
 
-
 	@keyframes animatedgradient {
 		0% {
 			background-position: left top;
 		}
-		25%{
+		25% {
 			background-position: right top;
 		}
 		50% {
@@ -68,16 +78,17 @@
 			/*transform: rotate(1turn);*/
 		}
 
-	}/*End of image border------------*/
+	}
 
+	/*End of image border------------*/
 
 
 	#playerWrapper {
 		position: absolute;
 		top: 50%;
 		left: 50%;
-		height: 75%;
-		width: 85%;
+		height: 80%;
+		width: 95%;
 		font-weight: 600;
 		transform: translate(-50%, -60%);
 
@@ -85,136 +96,135 @@
 
 	#playerDiv {
 		background-color: rgba(83, 83, 83, 0.5);
-		opacity: 0.8;
+		/*opacity: 0.8;*/
 	}
 
-	h1 {
-		background: -webkit-linear-gradient(#f6f44e, #1f437d);
+
+	#userNameDiv {
+
+		/*background: -webkit-linear-gradient(#d0ce42, #fff);*/
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
-	}
-
-
-	@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
-
-	h1 {
-		border-right: solid 3px rgba(0, 255, 0, .75);
+		text-align: end;
 		white-space: nowrap;
 		overflow: hidden;
-		font-family: 'Source Code Pro', monospace;
-		font-size: 28px;
-		color: rgba(255, 255, 255, .70);
+		/*font-family: 'Source Code Pro', monospace;*/
 	}
 
-	/* Animation */
-	h1 {
-		animation: animated-text 4s steps(10, end) 1s 1 normal both,
-		animated-cursor 600ms steps(10, end) infinite;
+
+	@media only screen and (orientation: portrait){
+		#userNameDiv{
+			font-size: 50px;
+		}
+		#albumImage{
+			height: 800px;
+		}
+
+		.NowPlayingDiv,  #playerDiv{
+			font-size: 60px;
+		}
+
+		.artistDiv{
+			font-size: 50px;
+		}
+
+		#playbar button{
+			font-size: 55px;
+		}
+
 	}
 
-	/* text animation */
-	@keyframes animated-text {
-		from {
-			width: 0;
+	@media only screen and (orientation: landscape){
+		.albumImageWrap{
+			margin-top: 20px!important;
+			margin-bottom: 20px!important;
 		}
-		to {
-			width: 145px;
+
+		#albumImage{
+			height: 300px;
+		}
+
+		.NowPlayingDiv, #playerDiv, #userNameDiv{
+			font-size: 24px;
+		}
+
+		.artistDiv{
+			font-size: 20px;
+		}
+
+		#playbar button{
+			font-size: 30px;
+			margin: 10px 15px 0 0;
+			height: inherit;
+		}
+
+		.mt-5{
+			margin-top: 0rem!important;
 		}
 	}
-
-	/* cursor animations */
-
-	@keyframes animated-cursor {
-		from {
-			border-right-color: rgba(0, 255, 0, .75);
-		}
-		to {
-			border-right-color: transparent;
-		}
-	}
-
 	
-	/*@media (min-width: 576px) {*/
-	/*	#albumImage{*/
-	/*		width: 500px;*/
-	/*	}*/
-	/*}*/
+	@media only screen and (min-width: 992px) {
 
-	/*@media (min-width: 768px) {*/
-	/*	#albumImage{*/
-	/*		width: 400px;*/
-	/*	}*/
-	/*}*/
-
-	/*@media (min-width: 992px) {*/
-	/*	#albumImage{*/
-	/*		width: 450px;*/
-	/*	}*/
-	/*}*/
+		#playbar button{
+			font-size: 30px;
+			margin: 10px 15px 0 0;
+			height: inherit;
+		}
+	}
 
 </style>
 
+<body>
+<!--<div id="headerBar"></div>-->
 
 <div id="blurredBackground" style="display: none;">
 
 </div>
 
-
-<div id="playerWrapper" style="display: none;">
-	<h1 style="color: darkblue;">Hi <p class="userName" style="display: inline-block">##UserName##</p></h1>
-
-	<div class="my-4 albumImageWrap">
-		<img id="albumImage" src="#" width="300px" class="img-fluid">
-	</div>
-
-
-	<div id="playerDiv" class="container col-12 mt-auto mt-lg-5 text-white" style="display: none;">
-
-
-
-
-		<div class="row py-4">
-
-
-			<div class="col-lg-1"></div>
-
-			<div class="col-lg-5">
-
-				<div>
-					<div>Now Playing: <p class="currentPlaying" style="display: inline-block;">##CurrentPlaying##</p>
-					</div>
-					<div>Artist: <p class="artists" style="display: inline-block;">##Artists##</p></div>
-
-				</div>
-				<div>
-					<p>Part of the lyrics: </p>
-					<div id="lyrics">
-
-					</div>
-
-
-				</div>
-			</div>
-
-
-			<div class="col-lg-1"></div>
-
-		</div>
-
-
-		<div id="playbar" class="d-flex align-items-center justify-content-center px-5 mt-5"
-		     style="background-color: #535353; height: 70px; width: 100%;">
-			<button id="prevBtn" style="display: inline-block;" class="btn"><i
-				class="fa fa-arrow-left align-self-center px-3 text-white"></i></button>
-			<button id="playBtn" style="display: inline-block;" class="btn"><i
-				class="fa fa-pause align-self-center px-3 text-white"></i></button>
-			<button id="nextBtn" style="display: inline-block;" class="btn"><i
-				class="fa fa-arrow-right align-self-center px-3 text-white"></i></button>
-		</div>
-
-	</div>
+<div class="container-fluid" id="NoConnectionDiv" style="display: none; text-align: center;">
+	<div style="font-size: 500px; text-align: center; color: #e1d6d6;"><span><i class="fas fa-frown"></i></span></div>
+	<p class="mx-5" style="font-size: 50px; color: coral; ">Please make sure your Spotify is on while using this web application! Turn on your Spotify and play some song to try this out now!</p>
 </div>
 
+
+<div id="playerWrapper" style="display: none;">
+	<div id="userNameDiv" class="">
+		<span><i class="fas fa-user-circle"></i></span>
+		<p class="userName px-2" style="display: inline-block">##UserName##</p>
+	</div>
+
+	<div class="my-5 albumImageWrap">
+		<img id="albumImage" src="#" class="img-fluid">
+	</div>
+
+	<div class="NowPlayingDiv text-white text-center"><p id="currentPlaying" style="display: inline-block;">##CurrentPlaying##</p></div>
+	<div class="artistDiv text-white text-center"><p id="artists" style="display: inline-block;">##Artists##</p></div>
+
+	<div id="playerDiv" class="container col-12 mt-auto mt-lg-3 text-white" style="display: none;">
+		<div id="lyricsDiv" style="display: none;">
+			<p>Part of the lyrics: </p>
+			<div id="lyrics">
+				Sorry! We don't have the lyrics of this song yet!
+			</div>
+
+		</div>
+	</div>
+
+
+	<div id="playbar" class="d-flex align-items-center justify-content-center px-5 mt-5"
+	     style="height: 70px; width: 100%;">
+		<button id="prevBtn" style="display: inline-block; border: 1px solid white; border-radius: 50%; margin: 20px 40px 0 0;" class="btn"><i
+			class="fa fa-arrow-left align-self-center px-3"></i></button>
+		<button id="playBtn" style="display: inline-block; border: 1px solid white; border-radius: 50%; margin: 20px 40px 0 0;" class="btn" class="btn"><i
+			class="fa fa-pause align-self-center px-3"></i></button>
+		<button id="nextBtn" style="display: inline-block; border: 1px solid white; border-radius: 50%; margin: 20px 40px 0 0;" class="btn" class="btn"><i
+			class="fa fa-arrow-right align-self-center px-3"></i></button>
+	</div>
+
+
+</div>
+
+</body>
 <script>
 	var getUserData = function () {
 		$.ajax({
@@ -241,13 +251,14 @@
 			dataType: 'JSON',
 			success: function (data) {
 				console.log(data);
-				console.log(data.item.name);
-				console.log(data.item.artists[0].name);
+				// console.log(data.item.name);
+				// console.log(data.item.artists[0].name);
 
-				console.log(data);
+
 				// getLyrics(data.item.name, data.item.artists[0].name);
 
-				if (data !== '') {
+				if (data !== '' && data.connection === undefined) {
+					$('#NoConnectionDiv').css('display', 'none');
 					var artists = [];
 					var i = 0;
 					while (data.item.artists.length > i) {
@@ -266,37 +277,82 @@
 					}
 
 
-					$('.currentPlaying').text(data.item.name);
-					$('.artists').text(artists);
-					$('#albumImage').prop('src', albumImagURL);
-					$('#blurredBackground').css({
-						"background": "url(" + albumImagURL + ")",
-						"background-size": "cover",
-						"background-attachment": "fixed",
-						"filter": "blur(20px)",
-						"width": "auto",
-						"height": "100vh",
-						"z-index": "-1",
-						"position": "relative",
-						"background-position": "center"
-					});
+					console.log($('#albumImage').attr('src'));
+					if ($('#albumImage').attr('src') !== albumImagURL) {
+						console.log('!!!!!');
+						$('#currentPlaying').text(data.item.name);
+						$('#artists').text(artists);
+						$('#albumImage').prop('src', albumImagURL);
+						$('#blurredBackground').css({
+							"background": "url(" + albumImagURL + ")",
+							"background-size": "cover",
+							"background-attachment": "fixed",
+							"filter": "blur(20px)",
+							"width": "auto",
+							"height": "100vh",
+							"z-index": "-1",
+							"position": "relative",
+							"background-position": "center"
+						});
 
-					$('#blurredBackground').css('display', 'block');
-					$('#playerWrapper, #playerDiv').css('display', 'block');
+						$('#blurredBackground').css('display', 'block');
+						$('#playerWrapper, #playerDiv').css('display', 'block');
+
+					} else {
+						console.log('-----------');
+					}
 
 
-					$('#lyrics').text(data.lyrics.lyrics_body);
+					if (data.lyrics !== undefined) {
+						$('#lyrics').text(data.lyrics.lyrics_body);
+					} else {
+						$('#lyrics').text('Sorry! We don\'t have the lyrics of this song yet!')
+					}
+
+
+					if (data.is_playing === true) {
+						$('#playBtn i').removeClass('fa-play').addClass('fa fa-pause');
+					} else {
+						$('#playBtn i').removeClass('fa-pause').addClass('fa fa-play');
+					}
+
+
+					//change text & button color according to img
+					const fac = new FastAverageColor();
+					// const container = document.querySelector('.image-container');
+					// const container = $('button');
+
+					fac.getColorAsync(albumImagURL)
+						.then(color => {
+
+							console.log(color);
+							$('button').css({
+								'background-color' : color.rgba,
+							});
+
+							$('button i').css({
+								'color' : color.isDark ? '#fff' : '#000'
+							});
+
+							$('#currentPlaying, #artists').css({
+								'color' : color.isDark ? '#fff' : '#000'
+							});
+
+							$('#userNameDiv').css({
+								'background-color' : color.isDark ? '#edff62' : '#2da6e3'
+							});
+
+						})
+						.catch(e => {
+							console.log(e);
+						});
+
 				} else {
-					$('#blurredBackground').css('display', 'none');
-					$('#playerWrapper, #playerDiv').css('display', 'none');
+					console.log(data);
+					console.log('connection is closed!');
+					$('#NoConnectionDiv').css('display', 'block');
 				}
 
-
-				if (data.is_playing === true) {
-					$('#playBtn i').removeClass('fa-play').addClass('fa fa-pause');
-				} else {
-					$('#playBtn i').removeClass('fa-pause').addClass('fa fa-play');
-				}
 
 			}
 		});
