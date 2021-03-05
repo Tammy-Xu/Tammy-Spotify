@@ -8,15 +8,15 @@ var fs = require("fs"),
 
 var musixmatchLyricsAPIKey = '8a9c004f3675bca796ec4d1fb79d30da';
 
-// var client_id = '67200a417bd943a8b4f2f89360381546'; // Your client id
-// var client_secret = '28857a674b2d42da9600d90e05b8527f'; // Your secret
-// var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
-// var site_url = 'http://localhost:8888';
+var client_id = '67200a417bd943a8b4f2f89360381546'; // Your client id
+var client_secret = '28857a674b2d42da9600d90e05b8527f'; // Your secret
+var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
+var site_url = 'http://localhost:8888';
 
-var client_id = '12bc7df3511d4be28b01f09ad0977958'; // Your client id
-var client_secret = '221abee4899544ce839d98941691df93'; // Your secret
-var redirect_uri = 'http://tammy.emoji.singles/callback'; // Your redirect uri
-var site_url = 'http://tammy.emoji.singles';
+// var client_id = '12bc7df3511d4be28b01f09ad0977958'; // Your client id
+// var client_secret = '221abee4899544ce839d98941691df93'; // Your secret
+// var redirect_uri = 'http://tammy.emoji.singles/callback'; // Your redirect uri
+// var site_url = 'http://tammy.emoji.singles';
 
 var request = require('request'); // "Request" library
 var Cookies = require('cookies'); //cookies module
@@ -25,9 +25,7 @@ const sqlite3 = require('sqlite3'); //sqlite3 module
 
 
 var access_token = null;
-
 var userKeyAndTokens = {};
-
 // var userCurrentPlayingDataArray = [];
 // var userDataArray = [];
 
@@ -150,7 +148,7 @@ var insertDataToSQLite3 = function (selectQ, updateQ, insertQ, insertParams) {
 								// console.log('inserted failed---');
 								reject(err);
 							} else {
-								// console.log('inserted row--' + insertQ);
+								console.log(rows);
 								resolve('inserted row---' + insertQ);
 							}
 						});
@@ -286,9 +284,14 @@ var insertUserInfo = function (userKey, access_token) {
 				var updateQuery = "UPDATE users SET userInfo='" + addslashes(JSON.stringify(body)) + "' WHERE userKey='" + userKey + "'";
 
 				insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
+					console.log('!!!!');
+					console.log(message)
 					resolve(body);
 				}).catch(function (err) {
-					reject(err);
+					reject({
+						connection: content.headers.connection,
+						content: content
+					});
 				})
 			}
 
@@ -559,8 +562,6 @@ var server = http.createServer(function (req, res) {
 
 	var contentType = 'text/html';
 
-
-
 	if (xpath === '/login') {
 
 		var state = generateRandomString(16);
@@ -572,42 +573,34 @@ var server = http.createServer(function (req, res) {
 		var userKey = cookies.get('userKey');
 		var userToken = cookies.get('userToken');
 
-
-
 		if (!userKey) {
 			//No userkey, set userkey to cookie
 			console.log('````````````````FIRST VISIT`````````````````````````');
 			cookies.set('userKey', cookies.keys);
-
 			userKey = cookies.keys;
-			console.log(userKeyAndTokens);
+			// console.log(userKeyAndTokens);
 
-
+			// your application requests authorization (API scope)
+			var scope = 'user-read-private user-read-email user-read-playback-state user-modify-playback-state';
+			res.writeHead(301, {
+				Location: 'https://accounts.spotify.com/authorize?' +
+					qs.stringify({
+						response_type: 'code',
+						client_id: client_id,
+						scope: scope,
+						// expires_in: 3,
+						redirect_uri: redirect_uri,
+						state: userKey
+					})
+			});
+			res.end("", 'utf-8');
 		} else {
 			//already has userKey
 			console.log('----already has user key----' + userKey);
 
 		}
 
-		// your application requests authorization (API scope)
-		var scope = 'user-read-private user-read-email user-read-playback-state user-modify-playback-state';
-		res.writeHead(301, {
-			Location: 'https://accounts.spotify.com/authorize?' +
-				qs.stringify({
-					response_type: 'code',
-					client_id: client_id,
-					scope: scope,
-					// expires_in: 3,
-					redirect_uri: redirect_uri,
-					state: userKey
-				})
-		});
-
-		res.end("", 'utf-8');
-
 	} else if (xpath === '/callback') {
-
-
 		// your application requests refresh and access tokens
 		// after checking the state parameter
 
@@ -664,37 +657,37 @@ var server = http.createServer(function (req, res) {
 					//
 					// }
 
-					insertUserInfo(userKey, userToken).then(function (message) {
-						console.log('627--userKey: ' + userKey + ' userToken: ' + userToken);
-						// console.log(message)
-					}).catch(function (error) {
-						console.log('--------630');
-						// console.log(error);
-					});
-					insertCurrentPlayContent(userKey, userToken).then(function (message) {
-						console.log('--------634')
-						// console.log(message);
-					}).catch(function (error) {
-						console.log('--------637')
-						// console.log(error);
-					});
-
 					//try to insert userKey and userToken to SQLite3---make this a function
 
 					var refresh_token = body.refresh_token;
 					var selectQuery = "SELECT COUNT(*) FROM users WHERE userKey='" + userKey + "'";
 					var insertQuery = "INSERT INTO users(userKey, userToken, refreshToken, userInfo, currentPlayingdata) VALUES (?,?,?,?,?)";
-					var updateQuery = "UPDATE users SET userToken='" + access_token + "', refreshToken='" + refresh_token + "', userInfo='" + userDataArray[access_token] + "', currentPlayingData='" + userCurrentPlayingDataArray[access_token] + "' WHERE userKey='" + userKey + "'";
-					var paramsInsert = [userKey, access_token, refresh_token, userDataArray[access_token], userCurrentPlayingDataArray[access_token]];
+					// var updateQuery = "UPDATE users SET userToken='" + access_token + "', refreshToken='" + refresh_token + "', userInfo='', currentPlayingData='' WHERE userKey='" + userKey + "'";
+					var paramsInsert = [userKey, access_token, refresh_token, null, null];
 
-					insertDataToSQLite3(selectQuery, updateQuery, insertQuery, paramsInsert).then(function (message) {
-						// console.log(message);
+					insertDataToSQLite3(selectQuery, null, insertQuery, paramsInsert).then(function (message) {
+						console.log('---664');
+						console.log(message);
 
 					}).catch(function (error) {
-						console.log('--------652')
-						// console.log(error)
+						console.log('--------652');
+						console.log(error)
 					});
 
+					// insertUserInfo(userKey, userToken).then(function (message) {
+					// 	console.log('627--userKey: ' + userKey + ' userToken: ' + userToken);
+					// 	console.log(message)
+					// }).catch(function (error) {
+					// 	console.log('--------630');
+					// 	console.log(error);
+					// });
+					// insertCurrentPlayContent(userKey, userToken).then(function (message) {
+					// 	console.log('--------634')
+					// 	console.log(message);
+					// }).catch(function (error) {
+					// 	console.log('--------637')
+					// 	console.log(error);
+					// });
 
 					//when page redirect to callback, redirect page to userinfo.html--
 					fs.readFile('./public/userinfo.html', function (error, content) {
@@ -723,11 +716,27 @@ var server = http.createServer(function (req, res) {
 			//instead of get userInfo from the global array, need to get it from sqlite----
 			getUserInfoFromSQL(userKey).then(function (msg) {
 				console.log('getUserINFO FROM SQL-----------722');
-				// console.log(msg);
 				var string = msg.userInfo;
-				// console.log(JSON.parse(removeslashes(string)));
-				res.write(removeslashes(string));
-				res.end();
+				if(msg.userInfo !== null){
+					// console.log(JSON.parse(removeslashes(string)));
+					res.write(removeslashes(string));
+					res.end();
+				}else{
+					getUserTokenFromSQL(userKey).then(function (msg) {
+						var token = msg.userToken;
+						insertUserInfo(userKey, token).then(function (message) {
+							console.log('!!!!!!!!!!!!---725');
+							console.log(message);
+							res.write(removeslashes(message));
+							res.end();
+						});
+					}).catch(function (err) {
+						console.log(err);
+					});
+				}
+
+				return message;
+
 			}).catch(function (msg) {
 				console.log('728 failed to select user info from SQL, insertUserInfo now');
 				// console.log(msg);
@@ -1091,5 +1100,5 @@ var server = http.createServer(function (req, res) {
 });
 
 
-// server.listen(8888);
-server.listen(80);
+server.listen(8888);
+// server.listen(80);
