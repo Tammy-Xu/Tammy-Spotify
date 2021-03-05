@@ -8,15 +8,15 @@ var fs = require("fs"),
 
 var musixmatchLyricsAPIKey = '8a9c004f3675bca796ec4d1fb79d30da';
 
-var client_id = '67200a417bd943a8b4f2f89360381546'; // Your client id
-var client_secret = '28857a674b2d42da9600d90e05b8527f'; // Your secret
-var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
-var site_url = 'http://localhost:8888';
+// var client_id = '67200a417bd943a8b4f2f89360381546'; // Your client id
+// var client_secret = '28857a674b2d42da9600d90e05b8527f'; // Your secret
+// var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
+// var site_url = 'http://localhost:8888';
 
-// var client_id = '12bc7df3511d4be28b01f09ad0977958'; // Your client id
-// var client_secret = '221abee4899544ce839d98941691df93'; // Your secret
-// var redirect_uri = 'http://tammy.emoji.singles/callback'; // Your redirect uri
-// var site_url = 'http://tammy.emoji.singles';
+var client_id = '12bc7df3511d4be28b01f09ad0977958'; // Your client id
+var client_secret = '221abee4899544ce839d98941691df93'; // Your secret
+var redirect_uri = 'http://tammy.emoji.singles/callback'; // Your redirect uri
+var site_url = 'http://tammy.emoji.singles';
 
 var request = require('request'); // "Request" library
 var Cookies = require('cookies'); //cookies module
@@ -1100,5 +1100,5 @@ var server = http.createServer(function (req, res) {
 });
 
 
-server.listen(8888);
-// server.listen(80);
+// server.listen(8888);
+server.listen(80);
