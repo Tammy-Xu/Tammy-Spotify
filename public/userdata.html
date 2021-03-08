@@ -188,7 +188,7 @@
 
 
 <div id="playerWrapper" style="display: none;">
-	<div id="userNameDiv" class="">
+	<div id="userNameDiv"/>
 		<span><i class="fas fa-user-circle"></i></span>
 		<p class="userName px-2" style="display: inline-block">##UserName##</p>
 	</div>
@@ -197,8 +197,10 @@
 		<img id="albumImage" src="#" class="img-fluid">
 	</div>
 
-	<div class="NowPlayingDiv text-white text-center"><p id="currentPlaying" style="display: inline-block;">##CurrentPlaying##</p></div>
-	<div class="artistDiv text-white text-center"><p id="artists" style="display: inline-block;">##Artists##</p></div>
+	<div class="NowPlayingDiv text-center">
+		<p id="currentPlaying" style="display: inline-block; border-style: inset; border-radius: 10px; padding: 0px 20px;">##CurrentPlaying##</p></div>
+	<div class="artistDiv text-center">
+		<p id="artists" style="display: inline-block; border-style: inset; border-radius: 10px; padding: 0px 20px;">##Artists##</p></div>
 
 	<div id="playerDiv" class="container col-12 mt-auto mt-lg-3 text-white" style="display: none;">
 		<div id="lyricsDiv" style="display: none;">
@@ -325,7 +327,7 @@
 						.then(color => {
 
 							console.log(color);
-							$('button').css({
+							$('button, #currentPlaying, #artists').css({
 								'background-color' : color.rgba,
 							});
 
@@ -334,7 +336,7 @@
 							});
 
 							$('#currentPlaying, #artists').css({
-								'color' : color.isDark ? '#fff' : '#000'
+								'color' : color.isDark ? '#fff' : '#000',
 							});
 
 							$('#userNameDiv').css({
@@ -383,10 +385,10 @@
 		console.log('12345');
 
 
-		setInterval(function () {
-			getUserData();
-			getCurrentPlayingData();
-		}, 3000);
+		// setInterval(function () {
+		// 	getUserData();
+		// 	getCurrentPlayingData();
+		// }, 3000);
 
 		//play bar functions
 		$('#playBtn').off().click(function () {

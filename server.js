@@ -22,6 +22,7 @@ var client_id;
 var client_secret;
 var redirect_uri;
 var site_url;
+var host;
 
 var request = require('request'); // "Request" library
 var Cookies = require('cookies'); //cookies module
@@ -559,7 +560,7 @@ var server = http.createServer(function (req, res) {
 
 	console.log('-----------------555------------------');
 	console.log(req.headers.host);
-	var host = req.headers.host;
+	host = req.headers.host;
 	if( host === 'localhost:8888'){
 		client_id = credentials.localCredentials.client_id;
 		client_secret = credentials.localCredentials.client_secret;
@@ -1126,6 +1127,9 @@ var server = http.createServer(function (req, res) {
 	}
 });
 
+if( host === 'localhost:8888'){
+	server.listen(8888);
+}else{
+	server.listen(80);
+}
 
-server.listen(8888);
-// server.listen(80);
