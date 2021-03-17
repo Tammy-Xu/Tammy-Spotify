@@ -1,4 +1,3 @@
-
 var fs = require("fs"),
 	path = require('path'),
 	http = require("http"),
@@ -15,8 +14,6 @@ var site_url;
 var Host;
 
 
-
-
 var request = require('request'); // "Request" library
 var Cookies = require('cookies'); //cookies module
 var Promise = require('promise'); //
@@ -26,7 +23,6 @@ var credentials = require('./credentials.json');
 // console.log(credentials);
 
 
-
 var access_token = null;
 // var userKeyAndTokens = {};
 // var userCurrentPlayingDataArray = [];
@@ -34,14 +30,42 @@ var access_token = null;
 
 //open database------
 const db_path = 'database.db';
-const db = new sqlite3.Database(db_path, (err) => {
-	if (err) {
-		return console.error(err.message);
-	}
+var db;
+// activateServer(8888); // port number on localhost!
+activateServer(80); // port number on server!
 
-	console.log('Connected to ' + db_path + ' SQlite database.');
+function createDBConnection(db_path) {
 
-});
+	return new Promise(function (resolve, reject) {
+		db = new sqlite3.Database(db_path, function (err) {
+			if (err) {
+				return console.error(err.message);
+				reject(err);
+			} else {
+				resolve('Connected to ' + db_path + ' SQlite database.');
+			}
+		});
+	});
+}
+
+function activateServer(portNumber) {
+	//check if db file exists, if not, reset Database with resetDB script.
+	fs.readFile(db_path, function (error, content) {
+
+		if (error) {
+			console.log('Can\'t find file----' + db_path + '----Please reset Database.');
+
+		} else {
+			//database file exist, listen to port!
+			console.log('-----' + db_path + ' exist!---------open port');
+			createDBConnection(db_path).then(function (msg) {
+				server.listen(portNumber);
+			}).catch(function (err) {
+				console.log(err);
+			});
+		}
+	});
+}
 
 function addslashes(str) {
 	return (str + '').replace(/'/g, "''").replace(/"/g, "\"\"");
@@ -74,19 +98,17 @@ var getNewAccessToken = function (refresh_token) {
 			}
 		};
 
-		request.post( options, function (error, response, body) {
-			if( response.statusCode === 200){
-
+		request.post(options, function (error, response, body) {
+			if (response.statusCode === 200) {
 				console.log('got refreshed access token!');
 				resolve(body);
 
-			}else{
+			} else {
 				console.log('get refreshed access token failed');
 				reject(body);
 			}
 		});
 	});
-
 };
 
 var getSongLyrics = function (name, artist) {
@@ -105,25 +127,25 @@ var getSongLyrics = function (name, artist) {
 			url: baseURL + getLyrcs + format + q_track + q_artist + musixMatchAPIKey,
 		};
 
-		request.get( options, function (error, response, body) {
-			if(error){
+		request.get(options, function (error, response, body) {
+			if (error) {
 				reject(body);
-			}else{
+			} else {
 
-				if( response.statusCode === 200){
+				if (response.statusCode === 200) {
 
 					var bodyJson = JSON.parse(body);
 
-					if(bodyJson.message.header.status_code === 200 ){
+					if (bodyJson.message.header.status_code === 200) {
 						console.log('GOT THE LYRICS!!!!!!!!!!!!!!!');
 						// console.log(bodyJson.message.body);
 						resolve(bodyJson.message.body);
-					}else{
+					} else {
 						console.log('FAILED TO GET LYRICS');
 						reject(body);
 					}
 
-				}else{
+				} else {
 					console.log('FAILED TO GET LYRICS');
 					reject(body);
 				}
@@ -159,7 +181,10 @@ var insertDataToSQLite3 = function (selectQ, updateQ, insertQ, insertParams) {
 						// console.log(rows);
 						db.run(updateQ, [], function (err, rows) {
 							if (err) {
-								reject(err);
+								reject({
+									err: err,
+									updateQuery: updateQ
+								});
 							} else {
 								// console.log('update successfully--' + updateQ);
 								resolve({
@@ -207,9 +232,17 @@ var getRefreshTokenFromSQL = function (userKey) {
 
 		db.get(selectQuery, [], function (err, rows) {
 			if (err) {
+				err.sql = selectQuery;
 				reject(err);
 			} else {
-				resolve(rows);
+				if( rows === undefined){
+					reject({
+						getRefreshTokenFromSQLRows: rows,
+						error: 'function getRefreshTokenFromSQL: Returned rows is undefined.'
+					});
+				}else{
+					resolve(rows);
+				}
 			}
 		});
 	});
@@ -222,9 +255,17 @@ var getUserTokenFromSQL = function (userKey) {
 
 		db.get(selectQuery, [], function (err, rows) {
 			if (err) {
+				err.sql = selectQuery;
 				reject(err);
 			} else {
-				resolve(rows);
+				if( rows === undefined){
+					reject({
+						getUserTokenFromSQLRows: rows,
+						error: 'function getUserTokenFromSQL: Returned rows is undefined.'
+					});
+				}else{
+					resolve(rows);
+				}
 			}
 		});
 	});
@@ -238,9 +279,17 @@ var getCurrentPlayDataFromSQL = function (userKey) {
 
 		db.get(selectQuery, [], function (err, rows) {
 			if (err) {
+				err.sql = selectQuery;
 				reject(err);
 			} else {
-				resolve(rows);
+				if( rows === undefined){
+					reject({
+						getCurrentPlayDataFromSQLRows: rows,
+						error: 'function getCurrentPlayDataFromSQL: Returned rows is undefined.'
+					});
+				}else{
+					resolve(rows);
+				}
 			}
 		});
 	});
@@ -254,9 +303,17 @@ var getUserInfoFromSQL = function (userKey) {
 
 		db.get(selectQuery, [], function (err, rows) {
 			if (err) {
+				err.sql = selectQuery;
 				reject(err);
 			} else {
-				resolve(rows);
+				if( rows === undefined){
+					reject({
+						rows: rows,
+						error: 'Returned rows is undefined.'
+					});
+				}else{
+					resolve(rows);
+				}
 			}
 		});
 	});
@@ -275,25 +332,20 @@ var insertUserInfo = function (userKey, access_token) {
 		// use the access token to access the Spotify Web API
 		request.get(options, function (error, response, body) {
 
-			if( response.statusCode !== 200 ){
+			if (response.statusCode !== 200) {
 				console.log('Failed to access Spotify Web API----' + access_token);
 				reject(body);
 
-			}else{
+			} else {
 				//insert user data to SQLite after getting it from Spotify API, no need to push into userDataArray
 				// userDataArray[access_token] = body;
 				var selectQuery = "SELECT COUNT(*) FROM users WHERE userKey='" + userKey + "'";
 				var updateQuery = "UPDATE users SET userInfo='" + addslashes(JSON.stringify(body)) + "' WHERE userKey='" + userKey + "'";
 
 				insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
-					console.log('!!!!');
-					console.log(message)
 					resolve(body);
 				}).catch(function (err) {
-					reject({
-						connection: content.headers.connection,
-						content: content
-					});
+					reject(err);
 				})
 			}
 
@@ -316,18 +368,20 @@ var insertCurrentPlayContent = function (userKey, access_token) {
 		};
 
 		request.get(options, function (error, content, body) {
+			// console.log('--------373--------');
+			// console.log(body);
 
-			if(error){
+			if (error) {
 				console.log('get request failed');
 				console.log(error);
-			}else{
+			} else {
 				//if there is error in body
-				if(body !== undefined){
-					if( "error" in body ){
-						console.log('----------There is error in insertCurrentPlayContent function ------');
+				if (body !== undefined) {
+					if ("error" in body) {
+						console.log('---There is error in insertCurrentPlayContent function---');
 						reject(body);
 
-					}else{
+					} else {
 						//dont need to insert current playing data to array now, insert to SQLite instead
 						// userCurrentPlayingDataArray[access_token] = body;
 						var selectQuery = "SELECT COUNT(*) FROM users WHERE userKey='" + userKey + "'";
@@ -339,8 +393,8 @@ var insertCurrentPlayContent = function (userKey, access_token) {
 							reject(err);
 						});
 					}
-				}else {
-					console.log(content.headers.connection);
+				} else {
+					// console.log(content.headers.connection);
 					reject({
 						connection: content.headers.connection,
 						content: content
@@ -479,7 +533,6 @@ var insertCurrentPlayContent = function (userKey, access_token) {
 
 var playerFuncs = function (access_token, method, action) {
 	console.log('play action is: ' + action + '-----------------');
-
 	var options = {
 		url: 'https://api.spotify.com/v1/me/player/' + action,
 		headers: {
@@ -490,7 +543,7 @@ var playerFuncs = function (access_token, method, action) {
 		json: true
 	};
 
-	if (action === "play") {
+	// if (action === "play") {
 
 		//change song code
 		// if(userCurrentPlayingDataArray[access_token] === undefined)
@@ -513,16 +566,15 @@ var playerFuncs = function (access_token, method, action) {
 		// 		json: true
 		// 	};
 		// }
-	}
-
+	// }
 
 	if (method === 'GET') {
 		request.get(options, function (error, content, body) {
 			console.log('========GET=========');
-			if (action === '') {
+			// if (action === '') {
 				// userCurrentPlayingDataArray[access_token] = body;
 				// userCurrentPlayingData = body;
-			}
+			// }
 		});
 	} else if (method === 'POST') {
 		request.post(options, function (error, content, body) {
@@ -530,7 +582,6 @@ var playerFuncs = function (access_token, method, action) {
 			// console.log(body);
 		});
 	} else if (method === 'PUT') {
-
 
 		request.put(options, function (error, content, body) {
 			console.log('---------------PUT--------------' + access_token);
@@ -551,7 +602,7 @@ var server = http.createServer(function (req, res) {
 
 	Host = req.headers.host;
 
-	if( Host === 'localhost:8888'){
+	if (Host === 'localhost:8888') {
 		client_id = credentials.localCredentials.client_id;
 		client_secret = credentials.localCredentials.client_secret;
 		redirect_uri = credentials.localCredentials.redirect_uri;
@@ -563,7 +614,6 @@ var server = http.createServer(function (req, res) {
 		redirect_uri = credentials.serverCredentials.redirect_uri;
 		site_url = credentials.serverCredentials.site_url;
 	}
-
 
 
 	var queryData = url.parse(decodeURIComponent(req.url), true);
@@ -653,7 +703,7 @@ var server = http.createServer(function (req, res) {
 				if (!error && response.statusCode === 200) {
 
 					console.log('-----------------callback-------------' + body.access_token);
-					
+
 					access_token = body.access_token;
 
 					//add access token to cookies
@@ -726,86 +776,51 @@ var server = http.createServer(function (req, res) {
 
 
 		getUserTokenFromSQL(userKey).then(function (message) {
-			// console.log('getUserTokenFromSQL is called successfully');
+			console.log('getUserTokenFromSQL is called successfully');
 			// console.log(message);
 
-			//got user token from SQL successfully-
-			//instead of get userInfo from the global array, need to get it from sqlite----
-			getUserInfoFromSQL(userKey).then(function (msg) {
-				console.log('getUserINFO FROM SQL-----------722');
-				var string = msg.userInfo;
-				if(msg.userInfo !== null){
-					// console.log(JSON.parse(removeslashes(string)));
-					res.write(removeslashes(string));
-					res.end();
-				}else{
-					getUserTokenFromSQL(userKey).then(function (msg) {
-						var token = msg.userToken;
-						insertUserInfo(userKey, token).then(function (message) {
-							console.log('!!!!!!!!!!!!---725');
-							console.log(message);
-							res.write(removeslashes(message));
-							res.end();
+			// if (typeof message !== "undefined") {
+				//got user token from SQL successfully-
+				//instead of get userInfo from the global array, need to get it from sqlite----
+				getUserInfoFromSQL(userKey).then(function (msg) {
+					console.log('getUserINFO FROM SQL-----------722');
+
+					var string = msg.userInfo;
+					if (msg.userInfo !== null) {
+						// console.log(JSON.parse(removeslashes(string)));
+						res.write(removeslashes(string));
+						res.end();
+					} else {
+						//user info is null
+						getUserTokenFromSQL(userKey).then(function (msg) {
+							var token = msg.userToken;
+							insertUserInfo(userKey, token).then(function (message) {
+								console.log('!!!!!!!!!!!!---725');
+								//after insert user info successfully, returned message is already an object, just need to make it into a JSON string. Can't use removeslashes(message);
+								res.write(JSON.stringify(message));
+								res.end();
+							});
+						}).catch(function (err) {
+							console.log(err);
 						});
-					}).catch(function (err) {
-						console.log(err);
-					});
-				}
+					}
 
-				return message;
-
-			}).catch(function (msg) {
-				console.log('728 failed to select user info from SQL, insertUserInfo now');
-				// console.log(msg);
-
-				getRefreshTokenFromSQL(userKey).then(function (msg) {
-					// console.log(msg);
-
-					getNewAccessToken(msg.refreshToken).then(function (new_access_token) {
-						// console.log('701 !!!!!');
-						// console.log(JSON.parse(M).access_token);
-						var refreshed_access_token = JSON.parse(new_access_token).access_token;
-						// console.log(refreshed_access_token);
-
-						var selectQuery = "SELECT COUNT(*) FROM users WHERE userKey='" + userKey + "'";
-						var updateQuery = "UPDATE users SET userToken='" + refreshed_access_token + "' WHERE userKey='" + userKey + "'";
-
-						insertDataToSQLite3(selectQuery, updateQuery).then(function (message) {
-							console.log('710-');
-							// console.log(message);
-						}).catch(function (message) {
-							console.log('713-');
-							// console.log(message);
-						});
-
-
-						insertUserInfo(userKey, refreshed_access_token).then(function (message) {
-							// console.log('719-');
-							// console.log(refreshed_access_token);
-							// console.log(message);
-							res.write(JSON.stringify(message));
-							res.end();
-						}).catch(function (Err) {
-							// console.log('725-');
-							// console.log(Err);
-						});
-
-					}).catch(function (ErrorMsg) {
-						// console.log(ErrorMsg);
-					});
-
-				}).catch(function (Err) {
-					// failed to get refresh access token
-					console.log('735-failed to get refresh token from SQL');
-					// console.log(Err);
-
+					// return message;
+				}).catch(function (err) {
+					console.log(err);
 				});
-			});
-
-		}).catch(function (error) {
-			// console.log(error);
-
+			// }
+			// else {
+			// 	res.write(JSON.stringify( {"error" : "please authenticate again."} ));
+			// 	res.end();
+			// }
+		}).catch(function (err) {
+			console.log(err);
+			// if failed to get userTokenFromSQL, make user authenticate again
+			res.write(JSON.stringify( {"error" : "There is no such userKey in database, please authenticate again!"} ));
+			res.end();
 		});
+
 
 	} else if (xpath === '/userCurrentPlayingData') {
 		var cookies = new Cookies(req, res);
@@ -842,6 +857,7 @@ var server = http.createServer(function (req, res) {
 			}).catch(function (err) {
 				console.log('783-- insertCurrentPlayContentfailed----');
 				// console.log(err);
+
 				//insert failed means need to use refresh token to get new access token
 				getRefreshTokenFromSQL(userKey).then(function (msg1) {
 					// console.log('-----869 get refresh token from SQL');
@@ -866,43 +882,43 @@ var server = http.createServer(function (req, res) {
 							// console.log(err);
 						});
 
-						insertCurrentPlayContent(userKey, refreshed_access_token).then(function (message) {
-							console.log('893--insert current play content with refresh access token.');
-							// console.log(refreshed_access_token);
-							// console.log(message.item.name);
-							// console.log(message.item.artists[0].name);
-
-							getSongLyrics(message.item.name, message.item.artists[0].name).then(function (getLyricsMsg) {
-								console.log('got lyrics successfully-----');
-								// console.log(getLyricsMsg);
-								res.write(JSON.stringify(Object.assign(message, getLyricsMsg)));
-								res.end();
-
-
-							}).catch(function (err) {
-								console.log('Get lyrics failed, get current display data from SQL again!');
-								getCurrentPlayDataFromSQL(userKey).then(function (msg) {
-									console.log('get currentplaydata FROM SQL-----------769');
-									// console.log(msg);
-									var string = msg.currentPlayingData;
-									// console.log(JSON.parse(removeslashes(string)));
-									res.write(removeslashes(string));
-									res.end();
-								}).catch(function (err) {
-									console.log('776--');
-									res.write(JSON.stringify(err));
-									res.end();
-								});
-
-							});
-
-							//the name of the current playing song --- message.item.name
-						}).catch(function (err) {
-							console.log('899-');
-							console.log(err);
-							res.write(JSON.stringify(err));
-							res.end();
-						});
+						// insertCurrentPlayContent(userKey, refreshed_access_token).then(function (message) {
+						// 	console.log('893--insert current play content with refresh access token.');
+						// 	// console.log(refreshed_access_token);
+						// 	// console.log(message.item.name);
+						// 	// console.log(message.item.artists[0].name);
+						//
+						// 	getSongLyrics(message.item.name, message.item.artists[0].name).then(function (getLyricsMsg) {
+						// 		console.log('got lyrics successfully-----');
+						// 		// console.log(getLyricsMsg);
+						// 		res.write(JSON.stringify(Object.assign(message, getLyricsMsg)));
+						// 		res.end();
+						//
+						//
+						// 	}).catch(function (err) {
+						// 		console.log('Get lyrics failed, get current display data from SQL again!');
+						// 		getCurrentPlayDataFromSQL(userKey).then(function (msg) {
+						// 			console.log('get currentplaydata FROM SQL-----------769');
+						// 			// console.log(msg);
+						// 			var string = msg.currentPlayingData;
+						// 			// console.log(JSON.parse(removeslashes(string)));
+						// 			res.write(removeslashes(string));
+						// 			res.end();
+						// 		}).catch(function (err) {
+						// 			console.log('776--');
+						// 			res.write(JSON.stringify(err));
+						// 			res.end();
+						// 		});
+						//
+						// 	});
+						//
+						// 	//the name of the current playing song --- message.item.name
+						// }).catch(function (err) {
+						// 	console.log('899-');
+						// 	console.log(err);
+						// 	res.write(JSON.stringify(err));
+						// 	res.end();
+						// });
 
 					}).catch(function (ErrorMsg) {
 						console.log('get new access token failed');
@@ -916,14 +932,16 @@ var server = http.createServer(function (req, res) {
 					res.write(JSON.stringify(err));
 					res.end();
 				});
+				res.write(JSON.stringify(err));
+				res.end();
 			});
 		}).catch(function (err) {
-			console.log('getUserTokenFrom SQL failed----908')
+			console.log('getUserTokenFrom SQL failed-');
 			res.write(JSON.stringify(err));
 			res.end();
 		});
 
-	} else if (xpath === '/getLyrics'){
+	} else if (xpath === '/getLyrics') {
 		//get lyrics
 
 		console.log('************************************************getLyrics');
@@ -980,21 +998,30 @@ var server = http.createServer(function (req, res) {
 		});
 
 
-	} else if (xpath === "/") {
+	} else if (xpath === '/clearCookies') {
+
+		var cookies = new Cookies(req, res);
+		cookies.set('userKey', '', '');
+		cookies.set('userToken', '', '');
+		res.write(JSON.stringify( {"result" : "success"}));
+		res.end();
+
+	}
+	else if (xpath === "/") {
 		var cookies = new Cookies(req, res);
 		var userKey = cookies.get('userKey');
 		var userToken = cookies.get('userToken');
 		//writing a check for cookies when page is loaded----
 		// console.log('906------'+userKey);
 
-		if(userKey){
+		if (userKey) {
 			console.log('userKey---' + userKey);
-			res.writeHead(301,{
-				Location: site_url+'/userdata.html'
+			res.writeHead(301, {
+				Location: site_url + '/userdata.html'
 			});
 			res.end();
-		}else{
-			console.log('!userKey' + userKey)
+		} else {
+			console.log('!userKey' + userKey);
 			fs.readFile('./public/index.html', function (error, content) {
 
 				res.writeHead(200, {'Content-Type': contentType});
@@ -1017,16 +1044,16 @@ var server = http.createServer(function (req, res) {
 
 		}
 
-		if(filePath.indexOf('index.' === -1)){
-			if(userKey === undefined || userToken === undefined){
-				res.writeHead(301,{
+		if (filePath.indexOf('index.' === -1)) {
+			if (userKey === undefined || userToken === undefined) {
+				res.writeHead(301, {
 					Location: '/'
 				});
 				return res.end();
-			}else{
+			} else {
 				console.log('UserKeyCookie: ' + userKey + '  UserTokenCookie:' + userToken);
 			}
-		}else{
+		} else {
 			console.log(filePath);
 		}
 
@@ -1084,7 +1111,8 @@ var server = http.createServer(function (req, res) {
 
 		fs.readFile(filePath, function (error, content) {
 
-
+			console.log('-----1117-----');
+			console.log(filePath);
 			if (error) {
 				if (error.code == 'ENOENT') {
 					console.log(filePath + " doesnt exist (2).");
@@ -1115,8 +1143,3 @@ var server = http.createServer(function (req, res) {
 		});
 	}
 });
-
-
-	// server.listen(8888);
-	server.listen(80);
-
